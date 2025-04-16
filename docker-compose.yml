@@ -1,0 +1,95 @@
+# file: docker-compose.yml
+version: '3'
+services:
+  directus:
+    image: tractr/directus-sync:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - '6969:6969'
+    volumes:
+      - ./snapshots:/directus/snapshots
+      - ./uploads:/directus/uploads
+      - ./extensions:/directus/extensions
+    env_file:
+      - .env
+    environment:
+      KEY: '${DIRECTUS_KEY}'
+      SECRET: '${DIRECTUS_SECRET}'
+      ADMIN_EMAIL: '${DIRECTUS_ADMIN_EMAIL}'
+      ADMIN_PASSWORD: '${DIRECTUS_ADMIN_PASSWORD}'
+      PUBLIC_URL: 'https://db.shersys.cc'
+      PORT: '6969'
+      DB_CLIENT: 'pg'
+      DB_HOST: 'postgres'
+      DB_PORT: '5432'
+      DB_DATABASE: 'directus'
+      DB_USER: 'directus'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      
+      # Redis Configuration
+      REDIS_ENABLED: 'true'
+      REDIS_HOST: 'redis'
+      REDIS_PORT: '6379'
+      
+      # Cloudinary Configuration
+      STORAGE_LOCATIONS: 'local,cloudinary'
+      STORAGE_LOCAL_DRIVER: 'local'
+      STORAGE_LOCAL_ROOT: './uploads'
+      STORAGE_CLOUDINARY_DRIVER: 'cloudinary'
+      STORAGE_CLOUDINARY_CLOUD_NAME: '${CLOUDINARY_CLOUD_NAME}'
+      STORAGE_CLOUDINARY_API_KEY: '${CLOUDINARY_API_KEY}'
+      STORAGE_CLOUDINARY_API_SECRET: '${CLOUDINARY_API_SECRET}'
+      
+      # Email Configuration
+      EMAIL_TRANSPORT: 'smtp'
+      EMAIL_SMTP_HOST: 'smtp-relay.brevo.com'
+      EMAIL_SMTP_PORT: '587'
+      EMAIL_SMTP_USER: '${SMTP_USER}'
+      EMAIL_SMTP_PASSWORD: '${SMTP_PASSWORD}'
+      EMAIL_FROM: 'Sherwood Systems <no-reply-sherwood@adminimize.app>'
+      EMAIL_SMTP_SECURE: 'true'
+      EMAIL_SMTP_IGNORE_TLS: 'false'
+      
+      # WebSockets
+      WEBSOCKETS_ENABLED: 'true'
+      
+      # Cache Configuration
+      CACHE_ENABLED: 'true'
+      CACHE_STORE: 'redis'
+      CACHE_TTL: '5m'
+      
+      # Marketplace Configuration (for Directus Sync)
+      MARKETPLACE_TRUST: 'all'
+      
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgis/postgis:15-3.5-alpine
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+      POSTGRES_USER: 'directus'
+      POSTGRES_DB: 'directus'
+
+  redis:
+    image: redis:alpine
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
